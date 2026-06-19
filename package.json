@@ -1,0 +1,23 @@
+{
+  "name": "one-theme",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "one-theme": "dist/cli.js",
+    "ot": "dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "check": "tsc -p tsconfig.json --noEmit",
+    "test": "tsx --test test/**/*.test.ts"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "tsx": "^4.20.0",
+    "typescript": "^5.8.0"
+  }
+}
