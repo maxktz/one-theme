@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { generateClaude } from '../src/adapters/claude.js';
+import { generateCodex } from '../src/adapters/codex.js';
 import { generateHerdr } from '../src/adapters/herdr.js';
 import { generateNeovim } from '../src/adapters/neovim.js';
 import { generatedOutputs } from '../src/targets.js';
@@ -30,6 +31,26 @@ const theme: ThemeLayer = {
         userMessageBackground: '#222222',
       },
     },
+    codex: {
+      colors: {
+        foreground: '#999999',
+        background: '#000000',
+        comment: '#777777',
+        string: '#00ff00',
+        keyword: '#bbbbbb',
+        function: '#0000ff',
+        variable: '#999999',
+        type: '#00ffff',
+        constant: '#ffaa00',
+        operator: '#aaaaaa',
+        heading: '#0000ff',
+        link: '#0000ff',
+        inserted: '#00ff00',
+        deleted: '#ff0000',
+        insertedBackground: '#222222',
+        deletedBackground: '#333333',
+      },
+    },
   },
 };
 
@@ -54,6 +75,14 @@ test('Claude generator emits a custom semantic theme', () => {
   assert.equal(parsed.base, 'dark');
   assert.equal(parsed.overrides.claude, '#0000ff');
   assert.equal(parsed.overrides.userMessageBackground, '#222222');
+});
+
+test('Codex generator emits a TextMate theme with diff scopes', () => {
+  const output = generateCodex('test', theme);
+  assert.match(output, /<key>name<\/key><string>ot-test<\/string>/);
+  assert.match(output, /<key>scope<\/key><string>markup\.inserted, diff\.inserted<\/string>/);
+  assert.match(output, /<key>background<\/key><string>#222222<\/string>/);
+  assert.match(output, /<key>scope<\/key><string>entity\.name\.type, support\.type<\/string>/);
 });
 
 test('generated outputs can backfill default color-mapped targets', () => {

@@ -2,6 +2,7 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { defaultClaudeColors } from './claude.js';
+import { defaultCodexColors } from './codex.js';
 import { defaultHerdrColors } from './herdr.js';
 import { runChecked } from '../process.js';
 import type { ImportedNeovimTheme, JsonValue, ThemeDocument } from '../types.js';
@@ -191,6 +192,7 @@ export async function importNeovimTheme(colorscheme: string, name: string): Prom
           },
           herdr: { colors: defaultHerdrColors },
           claude: { colors: defaultClaudeColors },
+          codex: { colors: defaultCodexColors },
         },
       },
       overrides: {
@@ -200,6 +202,7 @@ export async function importNeovimTheme(colorscheme: string, name: string): Prom
           neovim: { highlights: {} },
           herdr: { colors: {} },
           claude: { colors: {} },
+          codex: { colors: {} },
         },
       },
     };

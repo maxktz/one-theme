@@ -17,6 +17,15 @@ export async function readIfExists(file: string): Promise<string | null> {
   }
 }
 
+export async function realPathIfExists(file: string): Promise<string> {
+  try {
+    return await fs.realpath(file);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return file;
+    throw error;
+  }
+}
+
 export function stableJson(value: unknown): string {
   return `${JSON.stringify(value, null, 2)}\n`;
 }

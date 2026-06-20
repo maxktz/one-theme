@@ -43,6 +43,18 @@ export function claudeThemePath(name: string): string {
   return path.join(claudeConfigDir(), 'themes', `ot-${normalizeName(name)}.json`);
 }
 
+export function codexHome(): string {
+  return process.env.ONE_THEME_CODEX_HOME ?? process.env.CODEX_HOME ?? path.join(home, '.codex');
+}
+
+export function codexConfigPath(): string {
+  return process.env.ONE_THEME_CODEX_CONFIG ?? path.join(codexHome(), 'config.toml');
+}
+
+export function codexThemePath(name: string): string {
+  return path.join(codexHome(), 'themes', `ot-${normalizeName(name)}.tmTheme`);
+}
+
 export function normalizeName(name: string): string {
   const normalized = name.trim().toLowerCase().replace(/[ _]+/g, '-');
   if (!/^[a-z0-9][a-z0-9-]*$/.test(normalized)) {

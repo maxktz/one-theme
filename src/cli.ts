@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import process from 'node:process';
 import { claudeTarget } from './adapters/claude.js';
+import { codexTarget } from './adapters/codex.js';
 import { importNeovimTheme } from './adapters/neovim-import.js';
 import { neovimTarget } from './adapters/neovim.js';
 import { herdrTarget } from './adapters/herdr.js';
@@ -14,6 +15,7 @@ const targetAdapters: TargetAdapter[] = [
   neovimTarget,
   herdrTarget,
   claudeTarget,
+  codexTarget,
 ];
 
 function usage(): never {

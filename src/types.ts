@@ -49,6 +49,7 @@ export interface ThemeTargets {
   neovim: NeovimThemeData;
   herdr: ColorMappedTarget;
   claude?: ColorMappedTarget;
+  codex?: ColorMappedTarget;
   [target: string]: JsonValue | NeovimThemeData | ColorMappedTarget | undefined;
 }
 
@@ -56,5 +57,6 @@ export interface ThemeTargetOverrides {
   neovim: { highlights: Record<string, Record<string, JsonValue>> };
   herdr: ColorMappedTarget;
   claude?: ColorMappedTarget;
+  codex?: ColorMappedTarget;
   [target: string]: JsonValue | { highlights: Record<string, Record<string, JsonValue>> } | ColorMappedTarget | undefined;
 }
