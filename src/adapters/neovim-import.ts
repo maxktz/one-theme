@@ -1,6 +1,8 @@
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
+import { defaultClaudeColors } from './claude.js';
+import { defaultHerdrColors } from './herdr.js';
 import { runChecked } from '../process.js';
 import type { ImportedNeovimTheme, JsonValue, ThemeDocument } from '../types.js';
 
@@ -187,28 +189,8 @@ export async function importNeovimTheme(colorscheme: string, name: string): Prom
             highlights: normalizeHighlights(imported.highlights),
             terminalColors: imported.terminalColors,
           },
-          herdr: {
-            colors: {
-              accent: '@role.accent',
-              panel_bg: '@role.background',
-              surface0: '@role.elevated',
-              active_space_bg: '@role.elevated',
-              surface1: '@role.selection',
-              surface_dim: '@role.elevated',
-              separator: '@role.separator',
-              overlay0: '@role.muted',
-              overlay1: '@role.mutedStrong',
-              text: '@role.foreground',
-              subtext0: '@role.secondary',
-              mauve: '@role.special',
-              green: '@role.success',
-              yellow: '@role.warning',
-              red: '@role.error',
-              blue: '@role.info',
-              teal: '@role.hint',
-              peach: '@role.interrupted',
-            },
-          },
+          herdr: { colors: defaultHerdrColors },
+          claude: { colors: defaultClaudeColors },
         },
       },
       overrides: {
@@ -217,6 +199,7 @@ export async function importNeovimTheme(colorscheme: string, name: string): Prom
         targets: {
           neovim: { highlights: {} },
           herdr: { colors: {} },
+          claude: { colors: {} },
         },
       },
     };

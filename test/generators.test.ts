@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { generateClaude } from '../src/adapters/claude.js';
 import { generateHerdr } from '../src/adapters/herdr.js';
 import { generateNeovim } from '../src/adapters/neovim.js';
+import { generatedOutputs } from '../src/targets.js';
 import type { ThemeLayer } from '../src/types.js';
 
 const herdrColors = {
@@ -21,6 +23,13 @@ const theme: ThemeLayer = {
       terminalColors: { '0': '#000000' },
     },
     herdr: { colors: herdrColors },
+    claude: {
+      colors: {
+        claude: '#0000ff',
+        text: '#999999',
+        userMessageBackground: '#222222',
+      },
+    },
   },
 };
 
@@ -36,4 +45,52 @@ test('Herdr generator emits a complete external theme and maps NONE to reset', (
   assert.match(output, /name = "ot-test"/);
   assert.match(output, /panel_bg = "reset"/);
   assert.match(output, /separator = "#666666"/);
+});
+
+test('Claude generator emits a custom semantic theme', () => {
+  const output = generateClaude('test', theme);
+  const parsed = JSON.parse(output);
+  assert.equal(parsed.name, 'ot-test');
+  assert.equal(parsed.base, 'dark');
+  assert.equal(parsed.overrides.claude, '#0000ff');
+  assert.equal(parsed.overrides.userMessageBackground, '#222222');
+});
+
+test('generated outputs can backfill default color-mapped targets', () => {
+  const outputs = generatedOutputs('test', {
+    schemaVersion: 1,
+    name: 'test',
+    source: {
+      type: 'neovim',
+      colorscheme: 'test',
+      runtimePath: '/tmp/test',
+      revision: null,
+      importedAt: '2026-01-01T00:00:00.000Z',
+    },
+    base: {
+      palette: { blue: '#0000ff', fg: '#999999', bg_highlight: '#222222' },
+      roles: { accent: 'blue', foreground: 'fg', elevated: 'bg_highlight' },
+      targets: {
+        neovim: { highlights: {}, terminalColors: {} },
+        herdr: { colors: herdrColors },
+      },
+    },
+    overrides: {
+      palette: {},
+      roles: {},
+      targets: { neovim: { highlights: {} }, herdr: { colors: {} } },
+    },
+  }, [{
+    name: 'claude',
+    defaultColors: {
+      claude: '@role.accent',
+      text: '@role.foreground',
+      userMessageBackground: '@role.elevated',
+    },
+    outputPath: name => `/tmp/${name}.json`,
+    generate: generateClaude,
+  }]);
+
+  assert.equal(outputs.length, 1);
+  assert.match(outputs[0]!.content, /"userMessageBackground": "#222222"/);
 });

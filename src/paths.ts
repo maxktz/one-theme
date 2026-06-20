@@ -31,6 +31,18 @@ export function herdrThemePath(name: string): string {
   return path.join(path.dirname(herdrConfigPath()), 'themes', `ot-${normalizeName(name)}.toml`);
 }
 
+export function claudeConfigDir(): string {
+  return process.env.ONE_THEME_CLAUDE_CONFIG ?? path.join(home, '.claude');
+}
+
+export function claudeSettingsPath(): string {
+  return path.join(claudeConfigDir(), 'settings.json');
+}
+
+export function claudeThemePath(name: string): string {
+  return path.join(claudeConfigDir(), 'themes', `ot-${normalizeName(name)}.json`);
+}
+
 export function normalizeName(name: string): string {
   const normalized = name.trim().toLowerCase().replace(/[ _]+/g, '-');
   if (!/^[a-z0-9][a-z0-9-]*$/.test(normalized)) {

@@ -1,7 +1,7 @@
 # one-theme
 
-Personal theme compiler for Neovim and Herdr. It imports a Neovim colorscheme into one canonical
-JSON file, preserves personal overrides, and generates standalone target themes.
+Personal theme compiler for Neovim, Herdr, and Claude Code. It imports a Neovim colorscheme into
+one canonical JSON file, preserves personal overrides, and generates standalone target themes.
 
 ## Setup
 
@@ -31,3 +31,11 @@ Neovim activation is manual:
 ```vim
 :colorscheme ot-tokyonight
 ```
+
+Claude Code activation is automatic and writes `~/.claude/themes/ot-<name>.json`.
+
+## Targets
+
+Targets are small adapter files under `src/adapters/`. Color-mapped apps keep their semantic token
+mapping in `targets.<app>.colors` inside the canonical theme JSON, so per-app overrides stay local
+to the theme file.

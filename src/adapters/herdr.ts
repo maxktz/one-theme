@@ -1,10 +1,34 @@
 import type { ThemeLayer } from '../types.js';
+import { herdrThemePath } from '../paths.js';
+import { run, runChecked } from '../process.js';
+import type { TargetAdapter } from '../targets.js';
 
 const requiredColors = [
   'accent', 'panel_bg', 'surface0', 'active_space_bg', 'surface1', 'surface_dim',
   'separator', 'overlay0', 'overlay1', 'text', 'subtext0', 'mauve', 'green',
   'yellow', 'red', 'blue', 'teal', 'peach',
 ] as const;
+
+export const defaultHerdrColors: Record<string, string> = {
+  accent: '@role.accent',
+  panel_bg: '@role.background',
+  surface0: '@role.elevated',
+  active_space_bg: '@role.elevated',
+  surface1: '@role.selection',
+  surface_dim: '@role.elevated',
+  separator: '@role.separator',
+  overlay0: '@role.muted',
+  overlay1: '@role.mutedStrong',
+  text: '@role.foreground',
+  subtext0: '@role.secondary',
+  mauve: '@role.special',
+  green: '@role.success',
+  yellow: '@role.warning',
+  red: '@role.error',
+  blue: '@role.info',
+  teal: '@role.hint',
+  peach: '@role.interrupted',
+};
 
 function herdrColor(value: unknown, key: string): string {
   if (typeof value !== 'string') throw new Error(`Herdr color ${key} must resolve to a string`);
@@ -26,3 +50,21 @@ export function generateHerdr(name: string, theme: ThemeLayer): string {
   lines.push('');
   return lines.join('\n');
 }
+
+async function activateHerdr(name: string): Promise<string | undefined> {
+  const binary = process.env.ONE_THEME_HERDR_BIN ?? 'hrd';
+  await runChecked(binary, ['config', 'set-theme', `ot-${name}`]);
+  const reload = await run(binary, ['server', 'reload-config']);
+  if (reload.code !== 0) {
+    return `Herdr theme was activated on disk, but live reload failed: ${reload.stderr.trim() || reload.stdout.trim()}`;
+  }
+  return undefined;
+}
+
+export const herdrTarget: TargetAdapter = {
+  name: 'herdr',
+  defaultColors: defaultHerdrColors,
+  outputPath: herdrThemePath,
+  generate: generateHerdr,
+  activate: activateHerdr,
+};

@@ -18,19 +18,13 @@ export interface NeovimThemeData {
 export interface ThemeLayer {
   palette: Record<string, JsonValue>;
   roles: Record<string, string>;
-  targets: {
-    neovim: NeovimThemeData;
-    herdr: { colors: Record<string, string> };
-  };
+  targets: ThemeTargets;
 }
 
 export interface ThemeOverrides {
   palette: Record<string, JsonValue>;
   roles: Record<string, string>;
-  targets: {
-    neovim: { highlights: Record<string, Record<string, JsonValue>> };
-    herdr: { colors: Record<string, string> };
-  };
+  targets: ThemeTargetOverrides;
 }
 
 export interface ThemeDocument {
@@ -45,4 +39,22 @@ export interface ImportedNeovimTheme {
   palette: Record<string, JsonValue>;
   highlights: Record<string, Record<string, JsonValue>>;
   terminalColors: Record<string, string>;
+}
+
+export interface ColorMappedTarget {
+  colors: Record<string, string>;
+}
+
+export interface ThemeTargets {
+  neovim: NeovimThemeData;
+  herdr: ColorMappedTarget;
+  claude?: ColorMappedTarget;
+  [target: string]: JsonValue | NeovimThemeData | ColorMappedTarget | undefined;
+}
+
+export interface ThemeTargetOverrides {
+  neovim: { highlights: Record<string, Record<string, JsonValue>> };
+  herdr: ColorMappedTarget;
+  claude?: ColorMappedTarget;
+  [target: string]: JsonValue | { highlights: Record<string, Record<string, JsonValue>> } | ColorMappedTarget | undefined;
 }

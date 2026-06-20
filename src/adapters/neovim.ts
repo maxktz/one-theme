@@ -1,3 +1,5 @@
+import { nvimThemePath } from '../paths.js';
+import type { TargetAdapter } from '../targets.js';
 import type { JsonValue, ThemeLayer } from '../types.js';
 
 function lua(value: JsonValue): string {
@@ -28,3 +30,10 @@ export function generateNeovim(name: string, theme: ThemeLayer): string {
   lines.push('');
   return lines.join('\n');
 }
+
+export const neovimTarget: TargetAdapter = {
+  name: 'neovim',
+  outputPath: nvimThemePath,
+  generate: generateNeovim,
+  activationHint: name => `activate Neovim manually with: :colorscheme ot-${name}`,
+};
