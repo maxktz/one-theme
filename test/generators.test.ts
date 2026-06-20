@@ -4,6 +4,7 @@ import { generateClaude } from '../src/adapters/claude.js';
 import { generateCodex } from '../src/adapters/codex.js';
 import { generateHerdr } from '../src/adapters/herdr.js';
 import { generateNeovim } from '../src/adapters/neovim.js';
+import { generatePi } from '../src/adapters/pi.js';
 import { generatedOutputs } from '../src/targets.js';
 import type { ThemeLayer } from '../src/types.js';
 
@@ -51,6 +52,61 @@ const theme: ThemeLayer = {
         deletedBackground: '#333333',
       },
     },
+    pi: {
+      colors: {
+        accent: '#111111',
+        border: '#0000ff',
+        borderAccent: '#00ffff',
+        borderMuted: '#666666',
+        success: '#00ff00',
+        error: '#ff0000',
+        warning: '#ffff00',
+        muted: '#777777',
+        dim: '#888888',
+        text: '#999999',
+        thinkingText: '#aaaaaa',
+        selectedBg: '#444444',
+        userMessageBg: '#222222',
+        userMessageText: '#999999',
+        customMessageBg: '#222222',
+        customMessageText: '#999999',
+        customMessageLabel: '#bbbbbb',
+        toolPendingBg: '#222222',
+        toolSuccessBg: '#222222',
+        toolErrorBg: '#222222',
+        toolTitle: '#111111',
+        toolOutput: '#777777',
+        mdHeading: '#ffaa00',
+        mdLink: '#0000ff',
+        mdLinkUrl: '#888888',
+        mdCode: '#00ffff',
+        mdCodeBlock: '#00ff00',
+        mdCodeBlockBorder: '#666666',
+        mdQuote: '#777777',
+        mdQuoteBorder: '#666666',
+        mdHr: '#666666',
+        mdListBullet: '#111111',
+        toolDiffAdded: '#00ff00',
+        toolDiffRemoved: '#ff0000',
+        toolDiffContext: '#777777',
+        syntaxComment: '#777777',
+        syntaxKeyword: '#bbbbbb',
+        syntaxFunction: '#0000ff',
+        syntaxVariable: '#999999',
+        syntaxString: '#00ff00',
+        syntaxNumber: '#ffaa00',
+        syntaxType: '#111111',
+        syntaxOperator: '#aaaaaa',
+        syntaxPunctuation: '#aaaaaa',
+        thinkingOff: '#888888',
+        thinkingMinimal: '#777777',
+        thinkingLow: '#0000ff',
+        thinkingMedium: '#00ffff',
+        thinkingHigh: '#bbbbbb',
+        thinkingXhigh: '#ff0000',
+        bashMode: '#00ff00',
+      },
+    },
   },
 };
 
@@ -83,6 +139,15 @@ test('Codex generator emits a TextMate theme with diff scopes', () => {
   assert.match(output, /<key>scope<\/key><string>markup\.inserted, diff\.inserted<\/string>/);
   assert.match(output, /<key>background<\/key><string>#222222<\/string>/);
   assert.match(output, /<key>scope<\/key><string>entity\.name\.type, support\.type<\/string>/);
+});
+
+test('Pi generator emits a complete TUI theme JSON', () => {
+  const output = generatePi('test', theme);
+  const parsed = JSON.parse(output);
+  assert.equal(parsed.name, 'ot-test');
+  assert.equal(parsed.colors.accent, '#111111');
+  assert.equal(parsed.colors.userMessageBg, '#222222');
+  assert.equal(parsed.colors.thinkingXhigh, '#ff0000');
 });
 
 test('generated outputs can backfill default color-mapped targets', () => {

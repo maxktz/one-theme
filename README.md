@@ -1,8 +1,8 @@
 # one-theme
 
-Personal theme compiler for Neovim, Herdr, Claude Code, and partial Codex theming. It imports a
-Neovim colorscheme into one canonical JSON file, preserves personal overrides, and generates
-standalone target themes.
+Personal theme compiler for Neovim, Herdr, Claude Code, Pi Agent, and partial Codex theming. It
+imports a Neovim colorscheme into one canonical JSON file, preserves personal overrides, and
+generates standalone target themes.
 
 ## Setup
 
@@ -38,6 +38,9 @@ Claude Code activation is automatic and writes `~/.claude/themes/ot-<name>.json`
 Codex activation is automatic and writes `~/.codex/themes/ot-<name>.tmTheme`. Codex custom themes
 currently cover syntax highlighting, diffs, and some scope-derived UI colors; they do not cover every
 TUI surface.
+
+Pi Agent activation is automatic and writes `~/.pi/agent/themes/ot-<name>.json`, then sets
+`theme` in `~/.pi/agent/settings.json`. Pi may need `/theme reload` or a restart to pick it up.
 
 ## Targets
 

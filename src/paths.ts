@@ -55,6 +55,18 @@ export function codexThemePath(name: string): string {
   return path.join(codexHome(), 'themes', `ot-${normalizeName(name)}.tmTheme`);
 }
 
+export function piConfigDir(): string {
+  return process.env.ONE_THEME_PI_CONFIG ?? path.join(home, '.pi', 'agent');
+}
+
+export function piSettingsPath(): string {
+  return path.join(piConfigDir(), 'settings.json');
+}
+
+export function piThemePath(name: string): string {
+  return path.join(piConfigDir(), 'themes', `ot-${normalizeName(name)}.json`);
+}
+
 export function normalizeName(name: string): string {
   const normalized = name.trim().toLowerCase().replace(/[ _]+/g, '-');
   if (!/^[a-z0-9][a-z0-9-]*$/.test(normalized)) {

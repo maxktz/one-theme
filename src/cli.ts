@@ -5,6 +5,7 @@ import { codexTarget } from './adapters/codex.js';
 import { importNeovimTheme } from './adapters/neovim-import.js';
 import { neovimTarget } from './adapters/neovim.js';
 import { herdrTarget } from './adapters/herdr.js';
+import { piTarget } from './adapters/pi.js';
 import { lineDifferences } from './diff.js';
 import { atomicWrite, readIfExists } from './files.js';
 import { normalizeName, themePath } from './paths.js';
@@ -16,6 +17,7 @@ const targetAdapters: TargetAdapter[] = [
   herdrTarget,
   claudeTarget,
   codexTarget,
+  piTarget,
 ];
 
 function usage(): never {
