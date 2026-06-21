@@ -1,0 +1,116 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/maxktz/one-theme/main/schemas/one-theme.schema.json",
+  "title": "one-theme theme",
+  "type": "object",
+  "required": ["name", "appearance", "colors", "ui", "syntax", "terminal"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "name": { "type": "string" },
+    "appearance": { "enum": ["dark", "light"] },
+    "colors": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/hex" }
+    },
+    "ui": {
+      "type": "object",
+      "required": [
+        "background", "panel", "elevated", "selection", "border", "borderFocused",
+        "text", "textMuted", "textSubtle", "lineNumber", "cursorLine", "accent",
+        "success", "warning", "error", "info", "hint", "special", "interrupted",
+        "gitAdded", "gitChanged", "gitDeleted", "diffAdded", "diffChanged", "diffDeleted"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "background": { "$ref": "#/$defs/colorValue" },
+        "panel": { "$ref": "#/$defs/colorValue" },
+        "elevated": { "$ref": "#/$defs/colorValue" },
+        "selection": { "$ref": "#/$defs/colorValue" },
+        "border": { "$ref": "#/$defs/colorValue" },
+        "borderFocused": { "$ref": "#/$defs/colorValue" },
+        "text": { "$ref": "#/$defs/colorValue" },
+        "textMuted": { "$ref": "#/$defs/colorValue" },
+        "textSubtle": { "$ref": "#/$defs/colorValue" },
+        "lineNumber": { "$ref": "#/$defs/colorValue" },
+        "cursorLine": { "$ref": "#/$defs/colorValue" },
+        "accent": { "$ref": "#/$defs/colorValue" },
+        "success": { "$ref": "#/$defs/colorValue" },
+        "warning": { "$ref": "#/$defs/colorValue" },
+        "error": { "$ref": "#/$defs/colorValue" },
+        "info": { "$ref": "#/$defs/colorValue" },
+        "hint": { "$ref": "#/$defs/colorValue" },
+        "special": { "$ref": "#/$defs/colorValue" },
+        "interrupted": { "$ref": "#/$defs/colorValue" },
+        "gitAdded": { "$ref": "#/$defs/colorValue" },
+        "gitChanged": { "$ref": "#/$defs/colorValue" },
+        "gitDeleted": { "$ref": "#/$defs/colorValue" },
+        "diffAdded": { "$ref": "#/$defs/colorValue" },
+        "diffChanged": { "$ref": "#/$defs/colorValue" },
+        "diffDeleted": { "$ref": "#/$defs/colorValue" }
+      }
+    },
+    "syntax": {
+      "type": "object",
+      "additionalProperties": {
+        "oneOf": [
+          { "$ref": "#/$defs/colorValue" },
+          {
+            "type": "object",
+            "required": ["color"],
+            "additionalProperties": false,
+            "properties": {
+              "color": { "$ref": "#/$defs/colorValue" },
+              "italic": { "type": "boolean" },
+              "bold": { "type": "boolean" },
+              "underline": { "type": "boolean" }
+            }
+          }
+        ]
+      }
+    },
+    "terminal": {
+      "type": "object",
+      "required": [
+        "black", "red", "green", "yellow", "blue", "magenta", "cyan", "white",
+        "brightBlack", "brightRed", "brightGreen", "brightYellow", "brightBlue",
+        "brightMagenta", "brightCyan", "brightWhite"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "black": { "$ref": "#/$defs/colorValue" },
+        "red": { "$ref": "#/$defs/colorValue" },
+        "green": { "$ref": "#/$defs/colorValue" },
+        "yellow": { "$ref": "#/$defs/colorValue" },
+        "blue": { "$ref": "#/$defs/colorValue" },
+        "magenta": { "$ref": "#/$defs/colorValue" },
+        "cyan": { "$ref": "#/$defs/colorValue" },
+        "white": { "$ref": "#/$defs/colorValue" },
+        "brightBlack": { "$ref": "#/$defs/colorValue" },
+        "brightRed": { "$ref": "#/$defs/colorValue" },
+        "brightGreen": { "$ref": "#/$defs/colorValue" },
+        "brightYellow": { "$ref": "#/$defs/colorValue" },
+        "brightBlue": { "$ref": "#/$defs/colorValue" },
+        "brightMagenta": { "$ref": "#/$defs/colorValue" },
+        "brightCyan": { "$ref": "#/$defs/colorValue" },
+        "brightWhite": { "$ref": "#/$defs/colorValue" }
+      }
+    }
+  },
+  "$defs": {
+    "hex": {
+      "type": "string",
+      "pattern": "^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$"
+    },
+    "colorRef": {
+      "type": "string",
+      "pattern": "^@color\\.[a-zA-Z0-9_.-]+$"
+    },
+    "colorValue": {
+      "oneOf": [
+        { "$ref": "#/$defs/hex" },
+        { "$ref": "#/$defs/colorRef" }
+      ]
+    }
+  }
+}

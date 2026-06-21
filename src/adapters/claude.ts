@@ -1,84 +1,104 @@
+import fs from 'node:fs/promises';
 import { atomicWrite, readIfExists, stableJson } from '../files.js';
-import { claudeSettingsPath, claudeThemePath } from '../paths.js';
-import type { TargetAdapter } from '../targets.js';
-import type { JsonObject, ThemeLayer } from '../types.js';
+import { claudeConfigDir, claudeSettingsPath, claudeThemePath, generatedTheme } from '../paths.js';
+import type { AppAdapter, ClaudeAppConfig, ResolvedTheme } from '../types.js';
 
-export const defaultClaudeColors: Record<string, string> = {
-  claude: '@role.accent',
-  claudeShimmer: '@role.info',
-  text: '@role.foreground',
-  inverseText: '@role.foreground',
-  inactive: '@role.muted',
-  inactiveShimmer: '@role.mutedStrong',
-  subtle: '@role.separator',
-  suggestion: '@role.accent',
-  permission: '@role.special',
-  permissionShimmer: '@role.accent',
-  remember: '@role.hint',
-  success: '@role.success',
-  error: '@role.error',
-  warning: '@role.warning',
-  warningShimmer: '@role.interrupted',
-  merged: '@role.special',
-  promptBorder: '@role.separator',
-  promptBorderShimmer: '@role.mutedStrong',
-  planMode: '@role.info',
-  autoAccept: '@role.success',
-  bashBorder: '@role.interrupted',
-  ide: '@role.info',
-  fastMode: '@role.hint',
-  fastModeShimmer: '@role.info',
-  diffAdded: '@role.elevated',
-  diffRemoved: '@role.elevated',
-  diffAddedDimmed: '@role.elevated',
-  diffRemovedDimmed: '@role.elevated',
-  diffAddedWord: '@role.success',
-  diffRemovedWord: '@role.error',
-  userMessageBackground: '@role.elevated',
-  userMessageBackgroundHover: '@role.selection',
-  messageActionsBackground: '@role.selection',
-  bashMessageBackgroundColor: '@role.elevated',
-  clawd_body: '@role.accent',
-  memoryBackgroundColor: '@role.elevated',
-  selectionBg: '@role.selection',
-  rate_limit_fill: '@role.accent',
-  rate_limit_empty: '@role.separator',
-  briefLabelYou: '@role.accent',
-  briefLabelClaude: '@role.special',
-};
+interface JsonObject { [key: string]: unknown }
 
-function color(value: unknown, key: string): string {
-  if (typeof value !== 'string') throw new Error(`Claude color ${key} must resolve to a string`);
-  if (value.toUpperCase() === 'NONE') throw new Error(`Claude color ${key} cannot be NONE`);
-  return value;
+function overrides(theme: ResolvedTheme): Record<string, string> {
+  return {
+    autoAccept: theme.ui.success,
+    bashBorder: theme.ui.interrupted,
+    bashMessageBackgroundColor: theme.ui.elevated,
+    briefLabelClaude: theme.ui.special,
+    briefLabelYou: theme.ui.accent,
+    claude: theme.ui.accent,
+    claudeShimmer: theme.ui.info,
+    clawd_body: theme.ui.accent,
+    diffAdded: theme.ui.elevated,
+    diffAddedDimmed: theme.ui.elevated,
+    diffAddedWord: theme.ui.success,
+    diffRemoved: theme.ui.elevated,
+    diffRemovedDimmed: theme.ui.elevated,
+    diffRemovedWord: theme.ui.error,
+    error: theme.ui.error,
+    fastMode: theme.ui.hint,
+    fastModeShimmer: theme.ui.info,
+    ide: theme.ui.info,
+    inactive: theme.ui.textMuted,
+    inactiveShimmer: theme.ui.textSubtle,
+    inverseText: theme.ui.text,
+    memoryBackgroundColor: theme.ui.elevated,
+    merged: theme.ui.special,
+    messageActionsBackground: theme.ui.selection,
+    permission: theme.ui.special,
+    permissionShimmer: theme.ui.accent,
+    planMode: theme.ui.info,
+    promptBorder: theme.ui.border,
+    promptBorderShimmer: theme.ui.textSubtle,
+    rate_limit_empty: theme.ui.border,
+    rate_limit_fill: theme.ui.accent,
+    remember: theme.ui.hint,
+    selectionBg: theme.ui.selection,
+    subtle: theme.ui.border,
+    success: theme.ui.success,
+    suggestion: theme.ui.accent,
+    text: theme.ui.text,
+    userMessageBackground: theme.ui.elevated,
+    userMessageBackgroundHover: theme.ui.selection,
+    warning: theme.ui.warning,
+    warningShimmer: theme.ui.interrupted,
+  };
 }
 
-export function generateClaude(name: string, theme: ThemeLayer): string {
-  const target = theme.targets.claude;
-  if (!target || !('colors' in target)) throw new Error('Claude target mapping is missing');
-  const overrides = Object.fromEntries(
-    Object.entries(target.colors).sort(([a], [b]) => a.localeCompare(b)).map(([key, value]) => [key, color(value, key)]),
-  );
+export function generateClaude(theme: ResolvedTheme): string {
   return stableJson({
-    name: `ot-${name}`,
+    name: generatedTheme(),
     base: 'dark',
-    overrides,
+    overrides: overrides(theme),
   });
 }
 
-async function activateClaude(name: string): Promise<string | undefined> {
+async function detectClaude(): Promise<boolean> {
+  try {
+    const stat = await fs.stat(claudeConfigDir());
+    return stat.isDirectory();
+  } catch {
+    return false;
+  }
+}
+
+async function currentTheme(): Promise<string | null> {
+  const existing = await readIfExists(claudeSettingsPath());
+  if (existing === null) return null;
+  const settings = JSON.parse(existing) as JsonObject;
+  return typeof settings.theme === 'string' ? settings.theme : null;
+}
+
+async function writeTheme(theme: string): Promise<void> {
   const file = claudeSettingsPath();
   const existing = await readIfExists(file);
   const settings = existing === null ? {} : JSON.parse(existing) as JsonObject;
-  settings.theme = `custom:ot-${name}`;
+  settings.theme = theme;
   await atomicWrite(file, stableJson(settings));
+}
+
+async function activateClaude(): Promise<string | undefined> {
+  await writeTheme(`custom:${generatedTheme()}`);
   return undefined;
 }
 
-export const claudeTarget: TargetAdapter = {
+export const claudeTarget: AppAdapter<ClaudeAppConfig> = {
   name: 'claude',
-  defaultColors: defaultClaudeColors,
+  label: 'Claude',
+  defaultConfig: {},
   outputPath: claudeThemePath,
   generate: generateClaude,
+  detect: detectClaude,
+  currentTheme,
   activate: activateClaude,
+  deactivate: async config => {
+    await writeTheme(config.previousTheme ?? 'dark');
+    return undefined;
+  },
 };

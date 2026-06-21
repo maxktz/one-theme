@@ -1,64 +1,132 @@
-export type JsonScalar = string | number | boolean | null;
-export type JsonValue = JsonScalar | JsonObject | JsonValue[];
-export interface JsonObject { [key: string]: JsonValue }
+export type Appearance = 'dark' | 'light';
+export type ColorRef = `@color.${string}`;
+export type ColorValue = `#${string}` | ColorRef;
 
-export interface ThemeSource {
-  type: 'neovim';
-  colorscheme: string;
-  runtimePath: string;
-  revision: string | null;
-  importedAt: string;
+export interface SyntaxStyle {
+  color: ColorValue;
+  italic?: boolean;
+  bold?: boolean;
+  underline?: boolean;
 }
 
-export interface NeovimThemeData {
-  highlights: Record<string, Record<string, JsonValue>>;
-  terminalColors: Record<string, string>;
+export type SyntaxValue = ColorValue | SyntaxStyle;
+
+export interface UiTheme {
+  background: ColorValue;
+  panel: ColorValue;
+  elevated: ColorValue;
+  selection: ColorValue;
+  border: ColorValue;
+  borderFocused: ColorValue;
+  text: ColorValue;
+  textMuted: ColorValue;
+  textSubtle: ColorValue;
+  lineNumber: ColorValue;
+  cursorLine: ColorValue;
+  accent: ColorValue;
+  success: ColorValue;
+  warning: ColorValue;
+  error: ColorValue;
+  info: ColorValue;
+  hint: ColorValue;
+  special: ColorValue;
+  interrupted: ColorValue;
+  gitAdded: ColorValue;
+  gitChanged: ColorValue;
+  gitDeleted: ColorValue;
+  diffAdded: ColorValue;
+  diffChanged: ColorValue;
+  diffDeleted: ColorValue;
 }
 
-export interface ThemeLayer {
-  palette: Record<string, JsonValue>;
-  roles: Record<string, string>;
-  targets: ThemeTargets;
-}
-
-export interface ThemeOverrides {
-  palette: Record<string, JsonValue>;
-  roles: Record<string, string>;
-  targets: ThemeTargetOverrides;
+export interface TerminalTheme {
+  black: ColorValue;
+  red: ColorValue;
+  green: ColorValue;
+  yellow: ColorValue;
+  blue: ColorValue;
+  magenta: ColorValue;
+  cyan: ColorValue;
+  white: ColorValue;
+  brightBlack: ColorValue;
+  brightRed: ColorValue;
+  brightGreen: ColorValue;
+  brightYellow: ColorValue;
+  brightBlue: ColorValue;
+  brightMagenta: ColorValue;
+  brightCyan: ColorValue;
+  brightWhite: ColorValue;
 }
 
 export interface ThemeDocument {
-  schemaVersion: 1;
+  $schema?: string;
   name: string;
-  source: ThemeSource;
-  base: ThemeLayer;
-  overrides: ThemeOverrides;
+  appearance: Appearance;
+  colors: Record<string, `#${string}`>;
+  ui: UiTheme;
+  syntax: Record<string, SyntaxValue>;
+  terminal: TerminalTheme;
 }
 
-export interface ImportedNeovimTheme {
-  palette: Record<string, JsonValue>;
-  highlights: Record<string, Record<string, JsonValue>>;
-  terminalColors: Record<string, string>;
+export type AppName = 'neovim' | 'herdr' | 'ghostty' | 'claude';
+
+export interface AppConfigBase {
+  previousTheme?: string;
 }
 
-export interface ColorMappedTarget {
+export interface NeovimAppConfig extends AppConfigBase {
+  transparency: boolean;
+}
+
+export interface HerdrAppConfig extends AppConfigBase {
+  transparency: boolean;
+}
+
+export interface GhosttyAppConfig extends AppConfigBase {}
+
+export interface ClaudeAppConfig extends AppConfigBase {}
+
+export interface OneThemeConfig {
+  $schema?: string;
+  activeTheme: string;
+  apps: {
+    neovim: NeovimAppConfig;
+    herdr: HerdrAppConfig;
+    ghostty: GhosttyAppConfig;
+    claude: ClaudeAppConfig;
+  };
+}
+
+export interface ResolvedSyntaxStyle {
+  color: string;
+  italic?: boolean;
+  bold?: boolean;
+  underline?: boolean;
+}
+
+export interface ResolvedTheme {
+  name: string;
+  appearance: Appearance;
   colors: Record<string, string>;
+  ui: Record<keyof UiTheme, string>;
+  syntax: Record<string, ResolvedSyntaxStyle>;
+  terminal: Record<keyof TerminalTheme, string>;
 }
 
-export interface ThemeTargets {
-  neovim: NeovimThemeData;
-  herdr: ColorMappedTarget;
-  claude?: ColorMappedTarget;
-  codex?: ColorMappedTarget;
-  pi?: ColorMappedTarget;
-  [target: string]: JsonValue | NeovimThemeData | ColorMappedTarget | undefined;
+export interface GeneratedOutput {
+  target: string;
+  path: string;
+  content: string;
 }
 
-export interface ThemeTargetOverrides {
-  neovim: { highlights: Record<string, Record<string, JsonValue>> };
-  herdr: ColorMappedTarget;
-  claude?: ColorMappedTarget;
-  codex?: ColorMappedTarget;
-  pi?: ColorMappedTarget;
-  [target: string]: JsonValue | { highlights: Record<string, Record<string, JsonValue>> } | ColorMappedTarget | undefined;
+export interface AppAdapter<TConfig extends AppConfigBase = AppConfigBase> {
+  name: AppName;
+  label: string;
+  defaultConfig: TConfig;
+  outputPath(): string;
+  generate(theme: ResolvedTheme, config: TConfig): string;
+  detect(): Promise<boolean>;
+  currentTheme(): Promise<string | null>;
+  activate(config: TConfig): Promise<string | undefined>;
+  deactivate(config: TConfig): Promise<string | undefined>;
 }

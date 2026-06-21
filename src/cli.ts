@@ -1,120 +1,182 @@
 #!/usr/bin/env node
+import * as p from '@clack/prompts';
 import process from 'node:process';
 import { claudeTarget } from './adapters/claude.js';
-import { codexTarget } from './adapters/codex.js';
-import { importNeovimTheme } from './adapters/neovim-import.js';
-import { neovimTarget } from './adapters/neovim.js';
+import { ghosttyTarget } from './adapters/ghostty.js';
 import { herdrTarget } from './adapters/herdr.js';
-import { piTarget } from './adapters/pi.js';
-import { lineDifferences } from './diff.js';
-import { atomicWrite, readIfExists } from './files.js';
-import { normalizeName, themePath } from './paths.js';
-import { generatedOutputs, type TargetAdapter } from './targets.js';
-import { listThemes, loadTheme, saveTheme } from './theme-store.js';
+import { neovimTarget } from './adapters/neovim.js';
+import { atomicWrite } from './files.js';
+import { generatedTheme, normalizeName } from './paths.js';
+import { adapterConfig, generatedOutputs } from './targets.js';
+import { defaultConfig, listThemes, loadConfig, loadTheme, saveConfig } from './theme-store.js';
+import type { AppAdapter, AppName, OneThemeConfig } from './types.js';
 
-const targetAdapters: TargetAdapter[] = [
+interface AppState {
+  adapter: AppAdapter;
+  currentTheme: string | null;
+  active: boolean;
+}
+
+const appAdapters: AppAdapter[] = [
   neovimTarget,
   herdrTarget,
+  ghosttyTarget,
   claudeTarget,
-  codexTarget,
-  piTarget,
 ];
 
-function usage(): never {
-  console.error(`one-theme commands:
-  one-theme import neovim <colorscheme> --name <name> [--refresh]
-  one-theme apply <name> [--dry-run]
-  one-theme diff <name>
-  one-theme check <name>
-  one-theme list`);
-  process.exit(2);
+function help(): void {
+  console.log(`one-theme
+
+Run without arguments to open the theme wizard.
+
+Flags:
+  --help, -h   Show this help`);
 }
 
-function flagValue(args: string[], flag: string): string | undefined {
-  const index = args.indexOf(flag);
-  return index >= 0 ? args[index + 1] : undefined;
+function isOneTheme(theme: string | null): boolean {
+  return theme === generatedTheme() || theme === `custom:${generatedTheme()}`;
 }
 
-async function importCommand(args: string[]): Promise<void> {
-  if (args[0] !== 'neovim' || !args[1]) usage();
-  const nameArg = flagValue(args, '--name');
-  if (!nameArg) usage();
-  const name = normalizeName(nameArg);
-  const existing = await readIfExists(themePath(name));
-  if (existing !== null && !args.includes('--refresh')) {
-    throw new Error(`theme ${name} already exists; use --refresh to replace its pristine base`);
+function cancel(): never {
+  p.cancel('Cancelled.');
+  process.exit(0);
+}
+
+function unwrap<T>(value: T | symbol): T {
+  if (p.isCancel(value)) cancel();
+  return value;
+}
+
+function completeConfig(config: OneThemeConfig): OneThemeConfig {
+  return {
+    ...defaultConfig,
+    ...config,
+    apps: {
+      neovim: { ...defaultConfig.apps.neovim, ...config.apps.neovim },
+      herdr: { ...defaultConfig.apps.herdr, ...config.apps.herdr },
+      ghostty: { ...defaultConfig.apps.ghostty, ...config.apps.ghostty },
+      claude: { ...defaultConfig.apps.claude, ...config.apps.claude },
+    },
+  };
+}
+
+async function detectedApps(): Promise<AppState[]> {
+  const states: AppState[] = [];
+  for (const adapter of appAdapters) {
+    if (!(await adapter.detect())) continue;
+    const currentTheme = await adapter.currentTheme();
+    states.push({ adapter, currentTheme, active: isOneTheme(currentTheme) });
   }
-  const imported = await importNeovimTheme(args[1], name);
-  if (existing !== null) imported.overrides = (await loadTheme(name)).overrides;
-  await saveTheme(imported);
-  console.log(`${existing === null ? 'imported' : 'refreshed'} ${args[1]} as ${name}`);
-  console.log(themePath(name));
+  return states;
 }
 
-async function applyCommand(args: string[]): Promise<void> {
-  if (!args[0]) usage();
-  const name = normalizeName(args[0]);
-  const document = await loadTheme(name);
-  const outputs = generatedOutputs(name, document, targetAdapters);
-  if (args.includes('--dry-run')) {
-    for (const output of outputs) console.log(`would write ${output.target}: ${output.path}`);
-    for (const adapter of targetAdapters) {
-      if (adapter.activate) console.log(`would activate ${adapter.name} theme ot-${name}`);
-      const hint = adapter.activationHint?.(name);
-      if (hint) console.log(hint);
-    }
-    return;
+function updatePreviousThemes(config: OneThemeConfig, states: AppState[], selectedApps: Set<AppName>): OneThemeConfig {
+  const next = completeConfig(config);
+  for (const state of states) {
+    if (!selectedApps.has(state.adapter.name) || state.active || !state.currentTheme) continue;
+    next.apps[state.adapter.name].previousTheme = state.currentTheme;
   }
-  for (const output of outputs) {
+  return next;
+}
+
+async function applyTheme(config: OneThemeConfig, states: AppState[], selectedApps: Set<AppName>): Promise<string[]> {
+  const warnings: string[] = [];
+  const theme = await loadTheme(config.activeTheme);
+  for (const output of generatedOutputs(theme, config, states.map(state => state.adapter))) {
     await atomicWrite(output.path, output.content);
-    console.log(`wrote ${output.target}: ${output.path}`);
   }
-  for (const adapter of targetAdapters) {
-    if (!adapter.activate) {
-      const hint = adapter.activationHint?.(name);
-      if (hint) console.log(hint);
-      continue;
+
+  for (const state of states) {
+    const adapter = state.adapter;
+    const configForApp = adapterConfig(adapter, config);
+    let warning: string | undefined;
+    if (selectedApps.has(adapter.name)) {
+      warning = await adapter.activate(configForApp);
+    } else if (state.active) {
+      warning = await adapter.deactivate(configForApp);
     }
-    const warning = await adapter.activate(name);
-    if (warning) console.warn(warning);
-    console.log(`activated ${adapter.name} theme ot-${name}`);
+    if (warning) warnings.push(warning);
   }
+  await saveConfig(config);
+  return warnings;
 }
 
-async function compareCommand(args: string[], check: boolean): Promise<void> {
-  if (!args[0]) usage();
-  const name = normalizeName(args[0]);
-  const outputs = generatedOutputs(name, await loadTheme(name), targetAdapters);
-  let drift = false;
-  for (const output of outputs) {
-    const actual = await readIfExists(output.path);
-    if (actual === output.content) {
-      console.log(`${output.target}: current`);
-      continue;
-    }
-    drift = true;
-    console.log(`${output.target}: ${actual === null ? 'missing' : 'drifted'} (${output.path})`);
-    if (!check && actual !== null) {
-      for (const difference of lineDifferences(output.content, actual)) {
-        console.log(`  line ${difference.line}`);
-        console.log(`    expected: ${difference.expected}`);
-        console.log(`    actual:   ${difference.actual}`);
-      }
-    }
+async function wizard(): Promise<void> {
+  const config = completeConfig(await loadConfig());
+  const themes = await listThemes();
+  if (themes.length === 0) throw new Error('no themes found in ~/.config/one-theme/themes');
+
+  const states = await detectedApps();
+  if (states.length === 0) throw new Error('no supported app configs detected');
+
+  p.intro('one-theme');
+  p.note(`Current theme: ${config.activeTheme}`);
+
+  const selectedAppValues = unwrap(await p.multiselect<AppName>({
+    message: 'Use one-theme in apps',
+    options: states.map(state => ({
+      value: state.adapter.name,
+      label: state.adapter.label,
+      hint: state.currentTheme ? `current: ${state.currentTheme}` : 'current: unset',
+    })),
+    initialValues: states.filter(state => state.active).map(state => state.adapter.name),
+    required: false,
+  }));
+
+  const selectedTheme = normalizeName(unwrap(await p.select<string>({
+    message: 'Theme',
+    options: themes.map(theme => ({ value: theme, label: theme })),
+    initialValue: themes.includes(config.activeTheme) ? config.activeTheme : themes[0]!,
+  })));
+
+  const transparencyApps = states
+    .filter(state => state.adapter.name === 'neovim' || state.adapter.name === 'herdr')
+    .map(state => state.adapter.name as 'neovim' | 'herdr');
+  const transparentValues = transparencyApps.length === 0 ? [] : unwrap(await p.multiselect<'neovim' | 'herdr'>({
+    message: 'Transparent background',
+    options: transparencyApps.map(name => ({
+      value: name,
+      label: appAdapters.find(adapter => adapter.name === name)?.label ?? name,
+    })),
+    initialValues: transparencyApps.filter(name => config.apps[name].transparency),
+    required: false,
+  }));
+
+  const selectedApps = new Set(selectedAppValues);
+  const transparentApps = new Set(transparentValues);
+  const nextConfig = updatePreviousThemes({
+    ...config,
+    activeTheme: selectedTheme,
+    apps: {
+      ...config.apps,
+      neovim: { ...config.apps.neovim, transparency: transparentApps.has('neovim') },
+      herdr: { ...config.apps.herdr, transparency: transparentApps.has('herdr') },
+    },
+  }, states, selectedApps);
+
+  const spinner = p.spinner();
+  spinner.start('Applying theme');
+  try {
+    const warnings = await applyTheme(nextConfig, states, selectedApps);
+    spinner.stop('Applied one-theme');
+    for (const warning of warnings) p.log.warn(warning);
+    p.outro('Done.');
+  } catch (error) {
+    spinner.error('Failed.');
+    throw error;
   }
-  if (check && drift) process.exitCode = 1;
 }
 
 async function main(): Promise<void> {
-  const [command, ...args] = process.argv.slice(2);
-  switch (command) {
-    case 'import': await importCommand(args); break;
-    case 'apply': await applyCommand(args); break;
-    case 'diff': await compareCommand(args, false); break;
-    case 'check': await compareCommand(args, true); break;
-    case 'list': for (const name of await listThemes()) console.log(name); break;
-    default: usage();
+  const args = process.argv.slice(2);
+  if (args.includes('--help') || args.includes('-h')) {
+    help();
+    return;
   }
+  if (args.length > 0) {
+    throw new Error('one-theme is wizard-only right now; run `one-theme` without subcommands');
+  }
+  await wizard();
 }
 
 main().catch(error => {

@@ -1,8 +1,22 @@
 import fs from 'node:fs/promises';
 import { atomicWrite, readIfExists, stableJson } from './files.js';
-import { normalizeName, themePath, themesDir } from './paths.js';
-import { parseThemeDocument } from './schema.js';
-import type { ThemeDocument } from './types.js';
+import { configPath, normalizeName, themePath, themesDir } from './paths.js';
+import { parseConfig, parseThemeDocument } from './schema.js';
+import type { OneThemeConfig, ThemeDocument } from './types.js';
+
+export const schemaUrl = 'https://raw.githubusercontent.com/maxktz/one-theme/main/schemas/one-theme.schema.json';
+export const configSchemaUrl = 'https://raw.githubusercontent.com/maxktz/one-theme/main/schemas/one-theme.config.schema.json';
+
+export const defaultConfig: OneThemeConfig = {
+  $schema: configSchemaUrl,
+  activeTheme: 'tokyonight',
+  apps: {
+    neovim: { transparency: true },
+    herdr: { transparency: true },
+    ghostty: {},
+    claude: {},
+  },
+};
 
 export async function loadTheme(name: string): Promise<ThemeDocument> {
   const file = themePath(name);
@@ -13,6 +27,16 @@ export async function loadTheme(name: string): Promise<ThemeDocument> {
 
 export async function saveTheme(document: ThemeDocument): Promise<void> {
   await atomicWrite(themePath(document.name), stableJson(document));
+}
+
+export async function loadConfig(): Promise<OneThemeConfig> {
+  const content = await readIfExists(configPath());
+  if (content === null) return defaultConfig;
+  return parseConfig(content);
+}
+
+export async function saveConfig(config: OneThemeConfig): Promise<void> {
+  await atomicWrite(configPath(), stableJson(config));
 }
 
 export async function listThemes(): Promise<string[]> {

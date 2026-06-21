@@ -1,8 +1,10 @@
 # one-theme
 
-Personal theme compiler for Neovim, Herdr, Claude Code, Pi Agent, and partial Codex theming. It
-imports a Neovim colorscheme into one canonical JSON file, preserves personal overrides, and
-generates standalone target themes.
+Personal theme compiler for Neovim, Herdr, Ghostty, and Claude Code.
+
+`one-theme` owns a small semantic theme format and writes one stable installed theme named
+`one-theme` into each app. Changing theme later rewrites that installed theme instead of adding
+more app-specific theme names.
 
 ## Setup
 
@@ -15,35 +17,56 @@ pnpm link --global
 ## Usage
 
 ```sh
-one-theme import neovim tokyonight-night --name tokyonight
-one-theme apply tokyonight
-one-theme diff tokyonight
-one-theme check tokyonight
+one-theme
 ```
 
-Themes live in `~/.config/one-theme/themes/`. Re-import without losing overrides:
+The wizard:
 
-```sh
-one-theme import neovim tokyonight-night --name tokyonight --refresh
+1. Shows the current one-theme theme.
+2. Lets you choose which detected apps should use `one-theme`.
+3. Lets you choose the unified theme.
+4. Lets you choose transparent background for Neovim and Herdr.
+5. Installs generated theme files and activates/restores app themes in one apply step.
+
+No files are written until all prompts are complete.
+App checkboxes are read from each app's current theme config; one-theme stores only the active
+unified theme, transparency preferences, and previous app themes for restore.
+
+Themes live in:
+
+```text
+~/.config/one-theme/themes/
 ```
 
-Neovim activation is manual:
+Local one-theme preferences live in:
 
-```vim
-:colorscheme ot-tokyonight
+```text
+~/.config/one-theme/config.json
 ```
 
-Claude Code activation is automatic and writes `~/.claude/themes/ot-<name>.json`.
+Generated app themes are stable:
 
-Codex activation is automatic and writes `~/.codex/themes/ot-<name>.tmTheme`. Codex custom themes
-currently cover syntax highlighting, diffs, and some scope-derived UI colors; they do not cover every
-TUI surface.
+```text
+~/.config/nvim/colors/one-theme.lua
+~/.config/herdr/themes/one-theme.toml
+~/.config/ghostty/themes/one-theme
+~/.claude/themes/one-theme.json
+```
 
-Pi Agent activation is automatic and writes `~/.pi/agent/themes/ot-<name>.json`, then sets
-`theme` in `~/.pi/agent/settings.json`. Pi may need `/theme reload` or a restart to pick it up.
+## Theme Format
 
-## Targets
+Theme JSON is semantic and app-agnostic:
 
-Targets are small adapter files under `src/adapters/`. Color-mapped apps keep their semantic token
-mapping in `targets.<app>.colors` inside the canonical theme JSON, so per-app overrides stay local
-to the theme file.
+```json
+{
+  "$schema": "https://raw.githubusercontent.com/maxktz/one-theme/main/schemas/one-theme.schema.json",
+  "name": "tokyonight",
+  "appearance": "dark",
+  "colors": {},
+  "ui": {},
+  "syntax": {},
+  "terminal": {}
+}
+```
+
+Adapters own app mappings. Theme files do not contain target-specific output mappings.

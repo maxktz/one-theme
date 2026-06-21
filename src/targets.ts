@@ -1,47 +1,21 @@
 import { resolveTheme } from './resolve.js';
-import type { ThemeDocument, ThemeLayer } from './types.js';
+import type { AppAdapter, AppConfigBase, GeneratedOutput, OneThemeConfig, ThemeDocument } from './types.js';
 
-export interface GeneratedOutput {
-  target: string;
-  path: string;
-  content: string;
-}
-
-export interface TargetAdapter {
-  name: string;
-  defaultColors?: Record<string, string>;
-  outputPath(name: string): string;
-  generate(name: string, theme: ThemeLayer): string;
-  activate?(name: string): Promise<string | undefined>;
-  activationHint?(name: string): string | undefined;
-}
-
-export function applyTargetDefaults(document: ThemeDocument, adapters: TargetAdapter[]): ThemeDocument {
-  const baseTargets = { ...document.base.targets };
-  const overrideTargets = { ...document.overrides.targets };
-
-  for (const adapter of adapters) {
-    if (adapter.defaultColors && !(adapter.name in baseTargets)) {
-      baseTargets[adapter.name] = { colors: adapter.defaultColors };
-    }
-    if (adapter.defaultColors && !(adapter.name in overrideTargets)) {
-      overrideTargets[adapter.name] = { colors: {} };
-    }
-  }
-
+export function adapterConfig<TConfig extends AppConfigBase>(
+  adapter: AppAdapter<TConfig>,
+  config: OneThemeConfig,
+): TConfig {
   return {
-    ...document,
-    base: { ...document.base, targets: baseTargets },
-    overrides: { ...document.overrides, targets: overrideTargets },
-  };
+    ...adapter.defaultConfig,
+    ...config.apps[adapter.name],
+  } as TConfig;
 }
 
-export function generatedOutputs(name: string, document: ThemeDocument, adapters: TargetAdapter[]): GeneratedOutput[] {
-  const upgraded = applyTargetDefaults(document, adapters);
-  const resolved = resolveTheme(upgraded);
+export function generatedOutputs(theme: ThemeDocument, config: OneThemeConfig, adapters: AppAdapter[]): GeneratedOutput[] {
+  const resolved = resolveTheme(theme);
   return adapters.map(adapter => ({
     target: adapter.name,
-    path: adapter.outputPath(name),
-    content: adapter.generate(name, resolved),
+    path: adapter.outputPath(),
+    content: adapter.generate(resolved, adapterConfig(adapter, config)),
   }));
 }

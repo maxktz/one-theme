@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/maxktz/one-theme/main/schemas/one-theme.config.schema.json",
+  "title": "one-theme config",
+  "type": "object",
+  "required": ["activeTheme", "apps"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "activeTheme": { "type": "string" },
+    "apps": {
+      "type": "object",
+      "required": ["neovim", "herdr", "ghostty", "claude"],
+      "additionalProperties": false,
+      "properties": {
+        "neovim": { "$ref": "#/$defs/transparentApp" },
+        "herdr": { "$ref": "#/$defs/transparentApp" },
+        "ghostty": { "$ref": "#/$defs/basicApp" },
+        "claude": { "$ref": "#/$defs/basicApp" }
+      }
+    }
+  },
+  "$defs": {
+    "basicApp": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "previousTheme": { "type": "string" }
+      }
+    },
+    "transparentApp": {
+      "type": "object",
+      "required": ["transparency"],
+      "additionalProperties": false,
+      "properties": {
+        "transparency": { "type": "boolean" },
+        "previousTheme": { "type": "string" }
+      }
+    }
+  }
+}
