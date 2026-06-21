@@ -11,7 +11,7 @@
     "apps": {
       "type": "object",
       "required": ["neovim", "herdr", "ghostty", "claude"],
-      "additionalProperties": false,
+      "additionalProperties": { "$ref": "#/$defs/app" },
       "properties": {
         "neovim": { "$ref": "#/$defs/transparentApp" },
         "herdr": { "$ref": "#/$defs/transparentApp" },
@@ -32,6 +32,14 @@
       "type": "object",
       "required": ["transparency"],
       "additionalProperties": false,
+      "properties": {
+        "transparency": { "type": "boolean" },
+        "previousTheme": { "type": "string" }
+      }
+    },
+    "app": {
+      "type": "object",
+      "additionalProperties": true,
       "properties": {
         "transparency": { "type": "boolean" },
         "previousTheme": { "type": "string" }

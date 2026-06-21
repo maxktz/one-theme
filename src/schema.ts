@@ -1,4 +1,4 @@
-import type { AppConfigBase, ColorValue, OneThemeConfig, SyntaxStyle, SyntaxValue, TerminalTheme, ThemeDocument, UiTheme } from './types.js';
+import type { AppConfig, AppConfigBase, ColorValue, OneThemeConfig, SyntaxStyle, SyntaxValue, TerminalTheme, ThemeDocument, UiTheme } from './types.js';
 
 function object(value: unknown, label: string): Record<string, unknown> {
   if (value === null || Array.isArray(value) || typeof value !== 'object') {
@@ -92,11 +92,21 @@ function appBase(value: unknown, label: string): AppConfigBase {
   return result;
 }
 
+function appConfig(value: unknown, label: string): AppConfig {
+  const raw = object(value, label);
+  const result: AppConfig = { ...appBase(raw, label) };
+  if (raw.transparency !== undefined) result.transparency = boolean(raw.transparency, `${label}.transparency`);
+  return result;
+}
+
 export function parseConfig(raw: string): OneThemeConfig {
   const value = object(JSON.parse(raw), 'config');
   const apps = object(value.apps, 'config.apps');
   const neovimRaw = object(apps.neovim, 'config.apps.neovim');
   const herdrRaw = object(apps.herdr, 'config.apps.herdr');
+  const extraApps = Object.fromEntries(Object.entries(apps)
+    .filter(([name]) => !['neovim', 'herdr', 'ghostty', 'claude'].includes(name))
+    .map(([name, app]) => [name, appConfig(app, `config.apps.${name}`)]));
   const config: OneThemeConfig = {
     activeTheme: string(value.activeTheme, 'config.activeTheme'),
     apps: {
@@ -104,6 +114,7 @@ export function parseConfig(raw: string): OneThemeConfig {
       herdr: { ...appBase(apps.herdr, 'config.apps.herdr'), transparency: boolean(herdrRaw.transparency, 'config.apps.herdr.transparency') },
       ghostty: appBase(apps.ghostty, 'config.apps.ghostty'),
       claude: appBase(apps.claude, 'config.apps.claude'),
+      ...extraApps,
     },
   };
   if (typeof value.$schema === 'string') config.$schema = value.$schema;

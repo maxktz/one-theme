@@ -7,6 +7,8 @@ import { herdrTarget } from './adapters/herdr.js';
 import { neovimTarget } from './adapters/neovim.js';
 import { atomicWrite } from './files.js';
 import { generatedTheme, normalizeName } from './paths.js';
+import { loadPrivateAdapters } from './private-adapters.js';
+import { resolveTheme } from './resolve.js';
 import { adapterConfig, generatedOutputs } from './targets.js';
 import { defaultConfig, listThemes, loadConfig, loadTheme, saveConfig } from './theme-store.js';
 import type { AppAdapter, AppName, OneThemeConfig } from './types.js';
@@ -17,7 +19,7 @@ interface AppState {
   active: boolean;
 }
 
-const appAdapters: AppAdapter[] = [
+const builtinAdapters: AppAdapter[] = [
   neovimTarget,
   herdrTarget,
   ghosttyTarget,
@@ -48,19 +50,20 @@ function unwrap<T>(value: T | symbol): T {
 }
 
 function completeConfig(config: OneThemeConfig): OneThemeConfig {
+  const defaultApps = Object.fromEntries(
+    Object.entries(defaultConfig.apps).map(([name, appConfig]) => [name, { ...appConfig, ...config.apps[name] }]),
+  );
+  for (const [name, appConfig] of Object.entries(config.apps)) {
+    if (!(name in defaultApps)) defaultApps[name] = appConfig;
+  }
   return {
     ...defaultConfig,
     ...config,
-    apps: {
-      neovim: { ...defaultConfig.apps.neovim, ...config.apps.neovim },
-      herdr: { ...defaultConfig.apps.herdr, ...config.apps.herdr },
-      ghostty: { ...defaultConfig.apps.ghostty, ...config.apps.ghostty },
-      claude: { ...defaultConfig.apps.claude, ...config.apps.claude },
-    },
+    apps: defaultApps as OneThemeConfig['apps'],
   };
 }
 
-async function detectedApps(): Promise<AppState[]> {
+async function detectedApps(appAdapters: AppAdapter[]): Promise<AppState[]> {
   const states: AppState[] = [];
   for (const adapter of appAdapters) {
     if (!(await adapter.detect())) continue;
@@ -74,24 +77,32 @@ function updatePreviousThemes(config: OneThemeConfig, states: AppState[], select
   const next = completeConfig(config);
   for (const state of states) {
     if (!selectedApps.has(state.adapter.name) || state.active || !state.currentTheme) continue;
-    next.apps[state.adapter.name].previousTheme = state.currentTheme;
+    const appConfig = next.apps[state.adapter.name] ?? {};
+    appConfig.previousTheme = state.currentTheme;
+    next.apps[state.adapter.name] = appConfig;
   }
   return next;
 }
 
+function appSupportsTransparency(adapter: AppAdapter): boolean {
+  return 'transparency' in adapter.defaultConfig;
+}
+
 async function applyTheme(config: OneThemeConfig, states: AppState[], selectedApps: Set<AppName>): Promise<string[]> {
   const warnings: string[] = [];
-  const theme = await loadTheme(config.activeTheme);
-  for (const output of generatedOutputs(theme, config, states.map(state => state.adapter))) {
+  const themeDocument = await loadTheme(config.activeTheme);
+  const outputs = generatedOutputs(themeDocument, config, states.map(state => state.adapter));
+  for (const output of outputs) {
     await atomicWrite(output.path, output.content);
   }
+  const resolvedTheme = resolveTheme(themeDocument);
 
   for (const state of states) {
     const adapter = state.adapter;
     const configForApp = adapterConfig(adapter, config);
     let warning: string | undefined;
     if (selectedApps.has(adapter.name)) {
-      warning = await adapter.activate(configForApp);
+      warning = await adapter.activate(configForApp, resolvedTheme);
     } else if (state.active) {
       warning = await adapter.deactivate(configForApp);
     }
@@ -102,11 +113,12 @@ async function applyTheme(config: OneThemeConfig, states: AppState[], selectedAp
 }
 
 async function wizard(): Promise<void> {
+  const appAdapters = [...builtinAdapters, ...await loadPrivateAdapters()];
   const config = completeConfig(await loadConfig());
   const themes = await listThemes();
   if (themes.length === 0) throw new Error('no themes found in ~/.config/one-theme/themes');
 
-  const states = await detectedApps();
+  const states = await detectedApps(appAdapters);
   if (states.length === 0) throw new Error('no supported app configs detected');
 
   p.intro('one-theme');
@@ -129,28 +141,34 @@ async function wizard(): Promise<void> {
     initialValue: themes.includes(config.activeTheme) ? config.activeTheme : themes[0]!,
   })));
 
+  const selectedApps = new Set(selectedAppValues);
   const transparencyApps = states
-    .filter(state => state.adapter.name === 'neovim' || state.adapter.name === 'herdr')
-    .map(state => state.adapter.name as 'neovim' | 'herdr');
-  const transparentValues = transparencyApps.length === 0 ? [] : unwrap(await p.multiselect<'neovim' | 'herdr'>({
+    .filter(state =>
+      selectedApps.has(state.adapter.name)
+      && appSupportsTransparency(state.adapter)
+    )
+    .map(state => state.adapter.name);
+  const transparentValues = transparencyApps.length === 0 ? [] : unwrap(await p.multiselect<AppName>({
     message: 'Transparent background',
     options: transparencyApps.map(name => ({
       value: name,
       label: appAdapters.find(adapter => adapter.name === name)?.label ?? name,
     })),
-    initialValues: transparencyApps.filter(name => config.apps[name].transparency),
+    initialValues: transparencyApps.filter(name => config.apps[name]?.transparency),
     required: false,
   }));
 
-  const selectedApps = new Set(selectedAppValues);
   const transparentApps = new Set(transparentValues);
   const nextConfig = updatePreviousThemes({
     ...config,
     activeTheme: selectedTheme,
     apps: {
       ...config.apps,
-      neovim: { ...config.apps.neovim, transparency: transparentApps.has('neovim') },
-      herdr: { ...config.apps.herdr, transparency: transparentApps.has('herdr') },
+      neovim: { ...config.apps.neovim, transparency: selectedApps.has('neovim') ? transparentApps.has('neovim') : config.apps.neovim.transparency },
+      herdr: { ...config.apps.herdr, transparency: selectedApps.has('herdr') ? transparentApps.has('herdr') : config.apps.herdr.transparency },
+      ...Object.fromEntries(transparencyApps
+        .filter(name => name !== 'neovim' && name !== 'herdr')
+        .map(name => [name, { ...config.apps[name], transparency: transparentApps.has(name) }])),
     },
   }, states, selectedApps);
 

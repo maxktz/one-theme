@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { generateClaude } from '../src/adapters/claude.js';
 import { generateGhostty } from '../src/adapters/ghostty.js';
-import { generateHerdr } from '../src/adapters/herdr.js';
+import { generateHerdrCustomBlock } from '../src/adapters/herdr.js';
 import { generateNeovim } from '../src/adapters/neovim.js';
 import { parseConfig, parseThemeDocument } from '../src/schema.js';
 import { generatedOutputs } from '../src/targets.js';
@@ -141,11 +141,13 @@ test('Neovim generator emits stable one-theme colorscheme', () => {
   assert.match(output, /vim\.g\.terminal_color_15 = "#eeeeee"/);
 });
 
-test('Herdr generator emits stable one-theme TOML', () => {
-  const output = generateHerdr(resolveTheme(theme), config.apps.herdr);
-  assert.match(output, /name = "one-theme"/);
+test('Herdr stock generator emits a managed custom block', () => {
+  const output = generateHerdrCustomBlock(resolveTheme(theme), config.apps.herdr);
+  assert.match(output, /# one-theme:start/);
   assert.match(output, /panel_bg = "reset"/);
-  assert.match(output, /separator = "#444444"/);
+  assert.match(output, /surface_dim = "#444444"/);
+  assert.match(output, /overlay0 = "#444444"/);
+  assert.doesNotMatch(output, /separator =/);
 });
 
 test('Ghostty generator emits a terminal theme', () => {

@@ -32,10 +32,6 @@ export function herdrConfigPath(): string {
   return process.env.ONE_THEME_HERDR_CONFIG ?? path.join(home, '.config', 'herdr', 'config.toml');
 }
 
-export function herdrThemePath(): string {
-  return path.join(path.dirname(herdrConfigPath()), 'themes', `${generatedThemeName}.toml`);
-}
-
 export function ghosttyConfigDir(): string {
   return process.env.ONE_THEME_GHOSTTY_CONFIG ?? path.join(home, '.config', 'ghostty');
 }

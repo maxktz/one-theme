@@ -71,7 +71,7 @@ export interface ThemeDocument {
   terminal: TerminalTheme;
 }
 
-export type AppName = 'neovim' | 'herdr' | 'ghostty' | 'claude';
+export type AppName = string;
 
 export interface AppConfigBase {
   previousTheme?: string;
@@ -89,6 +89,10 @@ export interface GhosttyAppConfig extends AppConfigBase {}
 
 export interface ClaudeAppConfig extends AppConfigBase {}
 
+export type AppConfig = AppConfigBase & {
+  transparency?: boolean;
+};
+
 export interface OneThemeConfig {
   $schema?: string;
   activeTheme: string;
@@ -97,7 +101,7 @@ export interface OneThemeConfig {
     herdr: HerdrAppConfig;
     ghostty: GhosttyAppConfig;
     claude: ClaudeAppConfig;
-  };
+  } & Record<string, AppConfig>;
 }
 
 export interface ResolvedSyntaxStyle {
@@ -128,8 +132,9 @@ export interface AppAdapter<TConfig extends AppConfigBase = AppConfigBase> {
   defaultConfig: TConfig;
   outputPath(): string;
   generate(theme: ResolvedTheme, config: TConfig): string;
+  writeGenerated?: boolean;
   detect(): Promise<boolean>;
   currentTheme(): Promise<string | null>;
-  activate(config: TConfig): Promise<string | undefined>;
+  activate(config: TConfig, theme?: ResolvedTheme): Promise<string | undefined>;
   deactivate(config: TConfig): Promise<string | undefined>;
 }
