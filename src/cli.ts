@@ -89,7 +89,7 @@ function appSupportsTransparency(adapter: AppAdapter): boolean {
 }
 
 async function applyTheme(config: OneThemeConfig, states: AppState[], selectedApps: Set<AppName>): Promise<string[]> {
-  const warnings: string[] = [];
+  const notes: string[] = [];
   const themeDocument = await loadTheme(config.activeTheme);
   const outputs = generatedOutputs(themeDocument, config, states.map(state => state.adapter));
   for (const output of outputs) {
@@ -100,16 +100,16 @@ async function applyTheme(config: OneThemeConfig, states: AppState[], selectedAp
   for (const state of states) {
     const adapter = state.adapter;
     const configForApp = adapterConfig(adapter, config);
-    let warning: string | undefined;
+    let note: string | undefined;
     if (selectedApps.has(adapter.name)) {
-      warning = await adapter.activate(configForApp, resolvedTheme);
+      note = await adapter.activate(configForApp, resolvedTheme);
     } else if (state.active) {
-      warning = await adapter.deactivate(configForApp);
+      note = await adapter.deactivate(configForApp);
     }
-    if (warning) warnings.push(warning);
+    if (note) notes.push(note);
   }
   await saveConfig(config);
-  return warnings;
+  return notes;
 }
 
 async function wizard(): Promise<void> {
@@ -175,9 +175,9 @@ async function wizard(): Promise<void> {
   const spinner = p.spinner();
   spinner.start('Applying theme');
   try {
-    const warnings = await applyTheme(nextConfig, states, selectedApps);
+    const notes = await applyTheme(nextConfig, states, selectedApps);
     spinner.stop('Applied one-theme');
-    for (const warning of warnings) p.log.warn(warning);
+    for (const note of notes) p.log.info(note);
     p.outro('Done.');
   } catch (error) {
     spinner.error('Failed.');

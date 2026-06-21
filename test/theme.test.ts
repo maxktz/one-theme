@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { generateClaude } from '../src/adapters/claude.js';
 import { generateGhostty } from '../src/adapters/ghostty.js';
-import { generateHerdrCustomBlock } from '../src/adapters/herdr.js';
+import { herdrInternals } from '../src/adapters/herdr.js';
 import { generateNeovim } from '../src/adapters/neovim.js';
 import { parseConfig, parseThemeDocument } from '../src/schema.js';
 import { generatedOutputs } from '../src/targets.js';
@@ -141,13 +141,10 @@ test('Neovim generator emits stable one-theme colorscheme', () => {
   assert.match(output, /vim\.g\.terminal_color_15 = "#eeeeee"/);
 });
 
-test('Herdr stock generator emits a managed custom block', () => {
-  const output = generateHerdrCustomBlock(resolveTheme(theme), config.apps.herdr);
-  assert.match(output, /# one-theme:start/);
-  assert.match(output, /panel_bg = "reset"/);
-  assert.match(output, /surface_dim = "#444444"/);
-  assert.match(output, /overlay0 = "#444444"/);
-  assert.doesNotMatch(output, /separator =/);
+test('Herdr maps one-theme themes to built-in Herdr themes', () => {
+  assert.equal(herdrInternals.builtinThemeFor({ ...resolveTheme(theme), name: 'tokyonight' }), 'tokyo-night');
+  assert.equal(herdrInternals.builtinThemeFor({ ...resolveTheme(theme), name: 'tokyo-night' }), 'tokyo-night');
+  assert.equal(herdrInternals.builtinThemeFor(resolveTheme(theme)), 'terminal');
 });
 
 test('Ghostty generator emits a terminal theme', () => {
