@@ -21,6 +21,9 @@ export interface UiTheme {
   text: ColorValue;
   textMuted: ColorValue;
   textSubtle: ColorValue;
+  file: ColorValue;
+  directory: ColorValue;
+  ignored: ColorValue;
   lineNumber: ColorValue;
   cursorLine: ColorValue;
   accent: ColorValue;

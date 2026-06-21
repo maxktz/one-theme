@@ -25,8 +25,48 @@ function token(theme: ResolvedTheme, name: string, fallback: string): ResolvedSy
   return theme.syntax[name] ?? { color: fallback };
 }
 
+function tokenOr(theme: ResolvedTheme, name: string, fallback: ResolvedSyntaxStyle): ResolvedSyntaxStyle {
+  return theme.syntax[name] ?? fallback;
+}
+
 function background(theme: ResolvedTheme, config: NeovimAppConfig): string {
   return config.transparency ? 'NONE' : theme.ui.background;
+}
+
+function gitsignsHighlights(ui: ResolvedTheme['ui']): Record<string, Highlight> {
+  const colors = {
+    Add: { fg: ui.gitAdded, bg: ui.diffAdded },
+    Change: { fg: ui.gitChanged, bg: ui.diffChanged },
+    Delete: { fg: ui.gitDeleted, bg: ui.diffDeleted },
+    Changedelete: { fg: ui.gitChanged, bg: ui.diffChanged },
+    Topdelete: { fg: ui.gitDeleted, bg: ui.diffDeleted },
+    Untracked: { fg: ui.gitAdded, bg: ui.diffAdded },
+  };
+  const suffixes = ['', 'Nr', 'Cul'];
+  const result: Record<string, Highlight> = {};
+  for (const [kind, color] of Object.entries(colors)) {
+    for (const suffix of suffixes) {
+      result[`GitSigns${kind}${suffix}`] = { fg: color.fg };
+      result[`GitSignsStaged${kind}${suffix}`] = { fg: color.fg };
+    }
+    if (kind !== 'Delete') {
+      result[`GitSigns${kind}Ln`] = { bg: color.bg };
+      result[`GitSignsStaged${kind}Ln`] = { bg: color.bg };
+    }
+  }
+  result.GitSignsAddPreview = { bg: ui.diffAdded };
+  result.GitSignsDeletePreview = { bg: ui.diffDeleted };
+  result.GitSignsAddInline = { fg: ui.success, bg: ui.diffAdded };
+  result.GitSignsChangeInline = { fg: ui.warning, bg: ui.diffChanged };
+  result.GitSignsDeleteInline = { fg: ui.error, bg: ui.diffDeleted };
+  result.GitSignsAddLnInline = { fg: ui.success, bg: ui.diffAdded };
+  result.GitSignsChangeLnInline = { fg: ui.warning, bg: ui.diffChanged };
+  result.GitSignsDeleteLnInline = { fg: ui.error, bg: ui.diffDeleted };
+  result.GitSignsDeleteVirtLn = { bg: ui.diffDeleted };
+  result.GitSignsDeleteVirtLnInLine = { fg: ui.error, bg: ui.diffDeleted };
+  result.GitSignsVirtLnum = { fg: ui.gitDeleted, bg: ui.diffDeleted };
+  result.GitSignsCurrentLineBlame = { fg: ui.textMuted };
+  return result;
 }
 
 function highlights(theme: ResolvedTheme, config: NeovimAppConfig): Record<string, Highlight> {
@@ -42,7 +82,16 @@ function highlights(theme: ResolvedTheme, config: NeovimAppConfig): Record<strin
   const number = style(token(theme, 'number', ui.interrupted));
   const comment = style(token(theme, 'comment', ui.textMuted));
   const operator = style(token(theme, 'operator', ui.info));
+  const punctuationToken = token(theme, 'punctuation', ui.text);
+  const delimiter = style(tokenOr(theme, 'delimiter', punctuationToken));
+  const bracket = style(token(theme, 'bracket', ui.text));
+  const punctuationSpecial = style(token(theme, 'punctuationSpecial', ui.special));
+  const attribute = style(token(theme, 'attribute', ui.special));
+  const tag = style(token(theme, 'tag', ui.success));
+  const label = style(token(theme, 'label', ui.info));
   return {
+    ...gitsignsHighlights(ui),
+
     Normal: { fg: ui.text, bg: normalBg },
     NormalNC: { fg: ui.text, bg: normalBg },
     NormalFloat: { fg: ui.text, bg: ui.panel },
@@ -77,9 +126,10 @@ function highlights(theme: ResolvedTheme, config: NeovimAppConfig): Record<strin
     Conditional: keyword,
     Repeat: keyword,
     Operator: operator,
+    Delimiter: delimiter,
     Type: type,
     Special: style(token(theme, 'special', ui.special)),
-    Directory: { fg: ui.accent },
+    Directory: { fg: ui.directory },
 
     DiagnosticError: { fg: ui.error },
     DiagnosticWarn: { fg: ui.warning },
@@ -100,12 +150,43 @@ function highlights(theme: ResolvedTheme, config: NeovimAppConfig): Record<strin
     GitSignsChange: { fg: ui.gitChanged },
     GitSignsDelete: { fg: ui.gitDeleted },
 
-    NeoTreeNormal: { fg: ui.textSubtle, bg: normalBg },
-    NeoTreeNormalNC: { fg: ui.textSubtle, bg: normalBg },
+    NeoTreeNormal: { fg: ui.file, bg: normalBg },
+    NeoTreeNormalNC: { fg: ui.file, bg: normalBg },
     NeoTreeCursorLine: { bg: ui.elevated },
+    NeoTreeDimText: { fg: ui.textMuted },
+    NeoTreeDotfile: { fg: ui.textMuted },
+    NeoTreeFileIcon: { fg: ui.file },
+    NeoTreeFileName: { fg: ui.file },
+    NeoTreeFileNameOpened: { fg: ui.text },
+    NeoTreeDirectoryIcon: { fg: ui.directory },
+    NeoTreeDirectoryName: { fg: ui.directory },
+    NeoTreeRootName: { fg: ui.textSubtle, bold: false },
+    NeoTreeIndentMarker: { fg: ui.border },
+    NeoTreeGitAdded: { fg: ui.gitAdded },
+    NeoTreeGitConflict: { fg: ui.warning },
+    NeoTreeGitDeleted: { fg: ui.gitDeleted },
+    NeoTreeGitIgnored: { fg: ui.ignored },
+    NeoTreeGitModified: { fg: ui.gitChanged },
+    NeoTreeGitRenamed: { fg: ui.gitChanged },
+    NeoTreeGitStaged: { fg: ui.gitAdded },
+    NeoTreeGitUnstaged: { fg: ui.gitChanged },
+    NeoTreeGitUntracked: { fg: ui.gitAdded },
     NeoTreeWinSeparator: { fg: ui.border, bg: normalBg },
-    NvimTreeNormal: { fg: ui.textSubtle, bg: normalBg },
-    NvimTreeNormalNC: { fg: ui.textSubtle, bg: normalBg },
+    NvimTreeNormal: { fg: ui.file, bg: normalBg },
+    NvimTreeNormalNC: { fg: ui.file, bg: normalBg },
+    NvimTreeFileIcon: { fg: ui.file },
+    NvimTreeFolderIcon: { fg: ui.directory },
+    NvimTreeFolderName: { fg: ui.directory },
+    NvimTreeOpenedFolderName: { fg: ui.directory },
+    NvimTreeEmptyFolderName: { fg: ui.directory },
+    NvimTreeOpenedFile: { fg: ui.text },
+    NvimTreeGitDeleted: { fg: ui.gitDeleted },
+    NvimTreeGitDirty: { fg: ui.gitChanged },
+    NvimTreeGitIgnored: { fg: ui.ignored },
+    NvimTreeGitMerge: { fg: ui.warning },
+    NvimTreeGitNew: { fg: ui.gitAdded },
+    NvimTreeGitRenamed: { fg: ui.gitChanged },
+    NvimTreeGitStaged: { fg: ui.gitAdded },
     NvimTreeWinSeparator: { fg: ui.border, bg: normalBg },
 
     MiniStatuslineModeNormal: { fg: theme.colors.black ?? ui.background, bg: ui.accent, bold: true },
@@ -145,9 +226,16 @@ function highlights(theme: ResolvedTheme, config: NeovimAppConfig): Record<strin
     '@variable.parameter': parameter,
     '@property': property,
     '@field': property,
-    '@punctuation.delimiter': operator,
-    '@punctuation.bracket': { fg: ui.textSubtle },
-    '@tag.attribute': property,
+    '@punctuation.delimiter': delimiter,
+    '@punctuation.bracket': bracket,
+    '@punctuation.special': punctuationSpecial,
+    '@tag': tag,
+    '@tag.delimiter': bracket,
+    '@tag.attribute': attribute,
+    '@attribute': attribute,
+    '@label': label,
+    '@markup.link': style(token(theme, 'link', ui.info)),
+    '@markup.link.url': style(token(theme, 'link', ui.info)),
     '@lsp.type.property': { link: '@property' },
     '@lsp.type.variable': { link: '@variable' },
     '@lsp.type.parameter': { link: '@variable.parameter' },
@@ -156,6 +244,9 @@ function highlights(theme: ResolvedTheme, config: NeovimAppConfig): Record<strin
     '@lsp.type.class': { link: '@type' },
     '@lsp.type.interface': { link: '@type' },
     '@lsp.type.enum': { link: '@type' },
+    '@lsp.type.enumMember': { link: '@constant' },
+    '@lsp.type.decorator': { link: '@attribute' },
+    '@lsp.type.modifier': { link: '@keyword' },
   };
 }
 

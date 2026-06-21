@@ -19,10 +19,10 @@ function boolean(value: unknown, label: string): boolean {
 
 function color(value: unknown, label: string): ColorValue {
   const text = string(value, label);
-  if (/^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$/.test(text) || /^@color\.[a-zA-Z0-9_.-]+$/.test(text)) {
+  if (/^#[0-9a-fA-F]{6}$/.test(text) || /^@color\.[a-zA-Z0-9_.-]+$/.test(text)) {
     return text as ColorValue;
   }
-  throw new Error(`${label} must be a hex color or @color reference`);
+  throw new Error(`${label} must be a 6-digit hex color or @color reference`);
 }
 
 function colors(value: unknown, label: string): Record<string, `#${string}`> {
@@ -30,8 +30,8 @@ function colors(value: unknown, label: string): Record<string, `#${string}`> {
   const result: Record<string, `#${string}`> = {};
   for (const [key, item] of Object.entries(raw)) {
     const text = string(item, `${label}.${key}`);
-    if (!/^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$/.test(text)) {
-      throw new Error(`${label}.${key} must be a hex color`);
+    if (!/^#[0-9a-fA-F]{6}$/.test(text)) {
+      throw new Error(`${label}.${key} must be a 6-digit hex color`);
     }
     result[key] = text as `#${string}`;
   }
@@ -57,7 +57,7 @@ function requiredColors<T extends object>(value: unknown, label: string, keys: r
 
 const uiKeys = [
   'background', 'panel', 'elevated', 'selection', 'border', 'borderFocused',
-  'text', 'textMuted', 'textSubtle', 'lineNumber', 'cursorLine', 'accent',
+  'text', 'textMuted', 'textSubtle', 'file', 'directory', 'ignored', 'lineNumber', 'cursorLine', 'accent',
   'success', 'warning', 'error', 'info', 'hint', 'special', 'interrupted',
   'gitAdded', 'gitChanged', 'gitDeleted', 'diffAdded', 'diffChanged', 'diffDeleted',
 ] as const satisfies readonly (keyof UiTheme)[];

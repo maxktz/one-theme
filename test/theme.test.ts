@@ -41,6 +41,9 @@ const theme: ThemeDocument = {
     text: '@color.fg',
     textMuted: '@color.muted',
     textSubtle: '@color.subtle',
+    file: '@color.subtle',
+    directory: '@color.blue',
+    ignored: '@color.muted',
     lineNumber: '@color.border',
     cursorLine: '@color.elevated',
     accent: '@color.blue',
@@ -61,6 +64,8 @@ const theme: ThemeDocument = {
   syntax: {
     keyword: '@color.magenta',
     property: '@color.green',
+    punctuation: '@color.fg',
+    bracket: '@color.fg',
     comment: { color: '@color.muted', italic: false },
   },
   terminal: {
@@ -100,6 +105,17 @@ test('theme parser accepts the semantic schema', () => {
   assert.equal(parsed.syntax.comment.color, '@color.muted');
 });
 
+test('theme parser rejects alpha hex colors', () => {
+  const invalid = {
+    ...theme,
+    colors: {
+      ...theme.colors,
+      selection: '#0000ff33',
+    },
+  };
+  assert.throws(() => parseThemeDocument(JSON.stringify(invalid)), /6-digit hex color/);
+});
+
 test('config parser accepts typed target settings', () => {
   const parsed = parseConfig(JSON.stringify(config));
   assert.equal(parsed.apps.neovim.transparency, true);
@@ -117,6 +133,10 @@ test('Neovim generator emits stable one-theme colorscheme', () => {
   const output = generateNeovim(resolveTheme(theme), config.apps.neovim);
   assert.match(output, /vim\.g\.colors_name = "one-theme"/);
   assert.match(output, /"@property"/);
+  assert.match(output, /"@punctuation\.delimiter"/);
+  assert.match(output, /"NeoTreeDirectoryName"/);
+  assert.match(output, /"GitSignsAddNr"/);
+  assert.match(output, /"GitSignsStagedChange"/);
   assert.match(output, /"bg"\] = "NONE"/);
   assert.match(output, /vim\.g\.terminal_color_15 = "#eeeeee"/);
 });

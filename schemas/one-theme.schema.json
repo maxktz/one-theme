@@ -17,7 +17,7 @@
       "type": "object",
       "required": [
         "background", "panel", "elevated", "selection", "border", "borderFocused",
-        "text", "textMuted", "textSubtle", "lineNumber", "cursorLine", "accent",
+        "text", "textMuted", "textSubtle", "file", "directory", "ignored", "lineNumber", "cursorLine", "accent",
         "success", "warning", "error", "info", "hint", "special", "interrupted",
         "gitAdded", "gitChanged", "gitDeleted", "diffAdded", "diffChanged", "diffDeleted"
       ],
@@ -32,6 +32,9 @@
         "text": { "$ref": "#/$defs/colorValue" },
         "textMuted": { "$ref": "#/$defs/colorValue" },
         "textSubtle": { "$ref": "#/$defs/colorValue" },
+        "file": { "$ref": "#/$defs/colorValue" },
+        "directory": { "$ref": "#/$defs/colorValue" },
+        "ignored": { "$ref": "#/$defs/colorValue" },
         "lineNumber": { "$ref": "#/$defs/colorValue" },
         "cursorLine": { "$ref": "#/$defs/colorValue" },
         "accent": { "$ref": "#/$defs/colorValue" },
@@ -100,7 +103,7 @@
   "$defs": {
     "hex": {
       "type": "string",
-      "pattern": "^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$"
+      "pattern": "^#[0-9a-fA-F]{6}$"
     },
     "colorRef": {
       "type": "string",
