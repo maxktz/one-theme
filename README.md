@@ -1,6 +1,6 @@
 # one-theme
 
-Personal theme compiler for Neovim, Herdr, Ghostty, and Claude Code.
+Personal theme compiler for Neovim, Herdr, Ghostty, Claude Code, and Codex.
 
 `one-theme` owns a small semantic theme format and writes one stable installed theme named
 `one-theme` into each app. Changing theme later rewrites that installed theme instead of adding
@@ -48,9 +48,9 @@ Generated app themes are stable:
 
 ```text
 ~/.config/nvim/colors/one-theme.lua
-~/.config/herdr/themes/one-theme.toml
 ~/.config/ghostty/themes/one-theme
 ~/.claude/themes/one-theme.json
+~/.codex/themes/one-theme.tmTheme
 ```
 
 ## Theme Format

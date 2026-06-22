@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { generateClaude } from '../src/adapters/claude.js';
+import { generateCodex } from '../src/adapters/codex.js';
 import { generateGhostty } from '../src/adapters/ghostty.js';
 import { herdrInternals } from '../src/adapters/herdr.js';
 import { generateNeovim } from '../src/adapters/neovim.js';
@@ -95,6 +96,7 @@ const config: OneThemeConfig = {
     herdr: { transparency: true },
     ghostty: {},
     claude: {},
+    codex: {},
   },
 };
 
@@ -158,6 +160,15 @@ test('Claude generator emits a custom semantic theme', () => {
   const parsed = JSON.parse(output);
   assert.equal(parsed.name, 'one-theme');
   assert.equal(parsed.overrides.promptBorder, '#444444');
+});
+
+test('Codex generator emits a TextMate theme', () => {
+  const output = generateCodex(resolveTheme(theme), config.apps.codex);
+  assert.match(output, /<key>name<\/key><string>one-theme<\/string>/);
+  assert.match(output, /<key>foreground<\/key><string>#eeeeee<\/string>/);
+  assert.match(output, /<key>background<\/key><string>#000000<\/string>/);
+  assert.match(output, /<key>scope<\/key><string>keyword, keyword\.control, storage, storage\.type, storage\.modifier<\/string>/);
+  assert.match(output, /<key>foreground<\/key><string>#ff00ff<\/string>/);
 });
 
 test('generatedOutputs emits outputs for passed adapters', () => {

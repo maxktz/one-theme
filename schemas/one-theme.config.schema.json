@@ -10,13 +10,14 @@
     "activeTheme": { "type": "string" },
     "apps": {
       "type": "object",
-      "required": ["neovim", "herdr", "ghostty", "claude"],
+      "required": ["neovim", "herdr", "ghostty", "claude", "codex"],
       "additionalProperties": { "$ref": "#/$defs/app" },
       "properties": {
         "neovim": { "$ref": "#/$defs/transparentApp" },
         "herdr": { "$ref": "#/$defs/transparentApp" },
         "ghostty": { "$ref": "#/$defs/basicApp" },
-        "claude": { "$ref": "#/$defs/basicApp" }
+        "claude": { "$ref": "#/$defs/basicApp" },
+        "codex": { "$ref": "#/$defs/basicApp" }
       }
     }
   },

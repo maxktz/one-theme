@@ -2,6 +2,7 @@
 import * as p from '@clack/prompts';
 import process from 'node:process';
 import { claudeTarget } from './adapters/claude.js';
+import { codexTarget } from './adapters/codex.js';
 import { ghosttyTarget } from './adapters/ghostty.js';
 import { herdrTarget } from './adapters/herdr.js';
 import { neovimTarget } from './adapters/neovim.js';
@@ -24,6 +25,7 @@ const builtinAdapters: AppAdapter[] = [
   herdrTarget,
   ghosttyTarget,
   claudeTarget,
+  codexTarget,
 ];
 
 function help(): void {

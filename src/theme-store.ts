@@ -15,6 +15,7 @@ export const defaultConfig: OneThemeConfig = {
     herdr: { transparency: true },
     ghostty: {},
     claude: {},
+    codex: {},
   },
 };
 

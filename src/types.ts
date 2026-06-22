@@ -89,6 +89,8 @@ export interface GhosttyAppConfig extends AppConfigBase {}
 
 export interface ClaudeAppConfig extends AppConfigBase {}
 
+export interface CodexAppConfig extends AppConfigBase {}
+
 export type AppConfig = AppConfigBase & {
   transparency?: boolean;
 };
@@ -101,6 +103,7 @@ export interface OneThemeConfig {
     herdr: HerdrAppConfig;
     ghostty: GhosttyAppConfig;
     claude: ClaudeAppConfig;
+    codex: CodexAppConfig;
   } & Record<string, AppConfig>;
 }
 

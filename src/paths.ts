@@ -56,6 +56,18 @@ export function claudeThemePath(): string {
   return path.join(claudeConfigDir(), 'themes', `${generatedThemeName}.json`);
 }
 
+export function codexConfigDir(): string {
+  return process.env.ONE_THEME_CODEX_CONFIG ?? path.join(home, '.codex');
+}
+
+export function codexConfigPath(): string {
+  return path.join(codexConfigDir(), 'config.toml');
+}
+
+export function codexThemePath(): string {
+  return path.join(codexConfigDir(), 'themes', `${generatedThemeName}.tmTheme`);
+}
+
 export function generatedTheme(): string {
   return generatedThemeName;
 }

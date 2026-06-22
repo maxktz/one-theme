@@ -104,16 +104,18 @@ export function parseConfig(raw: string): OneThemeConfig {
   const apps = object(value.apps, 'config.apps');
   const neovimRaw = object(apps.neovim, 'config.apps.neovim');
   const herdrRaw = object(apps.herdr, 'config.apps.herdr');
+  const knownApps = ['neovim', 'herdr', 'ghostty', 'claude', 'codex'];
   const extraApps = Object.fromEntries(Object.entries(apps)
-    .filter(([name]) => !['neovim', 'herdr', 'ghostty', 'claude'].includes(name))
+    .filter(([name]) => !knownApps.includes(name))
     .map(([name, app]) => [name, appConfig(app, `config.apps.${name}`)]));
   const config: OneThemeConfig = {
     activeTheme: string(value.activeTheme, 'config.activeTheme'),
     apps: {
       neovim: { ...appBase(apps.neovim, 'config.apps.neovim'), transparency: boolean(neovimRaw.transparency, 'config.apps.neovim.transparency') },
       herdr: { ...appBase(apps.herdr, 'config.apps.herdr'), transparency: boolean(herdrRaw.transparency, 'config.apps.herdr.transparency') },
-      ghostty: appBase(apps.ghostty, 'config.apps.ghostty'),
-      claude: appBase(apps.claude, 'config.apps.claude'),
+      ghostty: appBase(apps.ghostty ?? {}, 'config.apps.ghostty'),
+      claude: appBase(apps.claude ?? {}, 'config.apps.claude'),
+      codex: appBase(apps.codex ?? {}, 'config.apps.codex'),
       ...extraApps,
     },
   };
