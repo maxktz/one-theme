@@ -1,5 +1,9 @@
+- adapter support
+    - cmux support
+    - vscode
+    - cursor cli
+    - zed
 - work on zed generator
-- solve herdr fork issue
 - add themes:
     - cattpucin
     - aura soft dark
